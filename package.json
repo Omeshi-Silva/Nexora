@@ -1,0 +1,29 @@
+{
+  "name": "nexora",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "NEXORA — One Journey. Every Future. An accessible journey-planning and tracking prototype for 2100.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "images": "node scripts/optimize-images.mjs",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "sharp": "^0.34.5",
+    "vite": "^5.4.8"
+  }
+}

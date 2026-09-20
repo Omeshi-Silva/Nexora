@@ -1,0 +1,261 @@
+/* ==========================================================
+   NEXORA Live Map: neon transport network on the dark navy map.
+   Colour = TYPE:  green ground, yellow smart roads, purple rail, blue air.
+   Red is reserved for problems. Category colours come from data/vehicles.js
+   (exposed as --nx-<id>, --nx-<id>-2, --nx-<id>-glow); nothing here redefines them.
+   Fast motion = live things (vehicles, alerts). Slow motion = infrastructure.
+   ========================================================== */
+
+.dot { display: inline-block; width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; background: var(--c, #94a3b8); box-shadow: 0 0 8px var(--c, transparent), 0 0 14px var(--g, transparent); }
+.glass { background: rgba(6, 20, 38, 0.86); border: 1px solid var(--line-strong); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+@keyframes nx-flow { to { stroke-dashoffset: -54; } }
+@keyframes nx-ping { from { transform: scale(0.6); opacity: 0.7; } to { transform: scale(1.35); opacity: 0; } }
+@keyframes nx-breathe { 50% { opacity: 0.35; } }
+
+/* ---------- base map layers ---------- */
+.map-road-core { stroke: rgba(57, 255, 20, 0.09); }
+.map-rail { stroke: var(--nx-rail); opacity: 0.8; stroke-width: 4; filter: drop-shadow(0 0 4px var(--nx-rail-glow)); }
+.map-rail-ties { stroke: #060d1c; }
+
+/* ---------- category routes (layers 3 and 5) ---------- */
+.net-route__halo { fill: none; stroke: var(--c); stroke-width: 9; opacity: 0.13; stroke-linejoin: round; }
+.net-route__line { fill: none; stroke: var(--c); stroke-width: 2.4; opacity: 0.55; stroke-linejoin: round; filter: drop-shadow(0 0 3px var(--c)); }
+.net-route__flow { fill: none; stroke: color-mix(in srgb, var(--c) 45%, #fff); stroke-width: 3.6; stroke-linecap: round; stroke-dasharray: 1 26; animation: nx-flow 3.6s linear infinite; opacity: 0.9; }
+.net-route--air .net-route__line { stroke-dasharray: 10 8; }
+.net-route--air .net-route__flow { animation-duration: 2.4s; }
+.net-route__shadow { fill: none; stroke: var(--c); stroke-width: 1.4; opacity: 0.14; stroke-dasharray: 2 7; }
+.net-route { transition: opacity 300ms var(--ease); }
+.net-route.is-dim { opacity: 0.16; }
+.net-route.is-focus .net-route__line { opacity: 1; stroke-width: 4; }
+.net-route.is-focus .net-route__halo { opacity: 0.3; }
+
+/* smart-road infrastructure: connected intersections and V2I links */
+.smart-node__core { fill: #0a0c02; stroke: var(--nx-smart); stroke-width: 1.8; filter: drop-shadow(0 0 4px var(--nx-smart-glow)); }
+.smart-node__pulse { fill: none; stroke: var(--nx-smart); stroke-width: 1.2; opacity: 0; animation: nx-ping 3.8s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.smart-link { stroke: var(--nx-smart); stroke-width: 1.4; stroke-dasharray: 3 6; opacity: 0.75; animation: nx-flow 1.4s linear infinite; }
+.smart-link--ai { stroke: var(--nx-smart-2); opacity: 0.95; stroke-dasharray: 2 7; }
+
+/* ---------- stations and hubs ---------- */
+.map-station { color: var(--c); }
+.map-station .map-station__box { fill: #060d1c; stroke: var(--c); stroke-width: 2; filter: drop-shadow(0 0 5px var(--c)); }
+.map-station .map-station__icon { color: var(--c); }
+.map-station__pulse { fill: none; stroke: var(--c); stroke-width: 1.4; opacity: 0; animation: nx-ping 4.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.map-pad { fill: none; stroke: var(--c); stroke-width: 1.6; opacity: 0.8; filter: drop-shadow(0 0 4px var(--c)); }
+.map-station.is-dim { opacity: 0.3; }
+.map-station:focus-visible .map-station__box { stroke: #fff; stroke-width: 3; }
+
+/* ---------- the traveller's journey (layer 8) ---------- */
+.map-route__halo { stroke: var(--c); stroke-width: 13; opacity: 0.26; filter: blur(3px); }
+.map-route .map-route__line { stroke: var(--c); stroke-width: 4.6; filter: drop-shadow(0 0 5px var(--c)); }
+.map-route__flow { fill: none; stroke: color-mix(in srgb, var(--c) 35%, #fff); stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 1 20; animation: nx-flow 1.6s linear infinite; }
+.map-route .is-done { opacity: 0.32; }
+.map-route .is-done .map-route__flow { animation: none; }
+.map-route .is-upcoming { opacity: 0.72; }
+.map-route .is-active .map-route__line { stroke-width: 6; filter: drop-shadow(0 0 9px var(--c)); }
+.map-route--alt .map-route__halo { display: none; }
+.map-route--alt .map-route__line { opacity: 0.8; stroke-width: 3.6; }
+.map-dest .map-dest__pin { fill: #f8fafc; stroke: #020817; }
+.map-dest { color: #020817; }
+
+/* ---------- vehicle markers (layer 6) ---------- */
+.map-vehicle { color: var(--c); }
+.map-vehicle .map-vehicle__body { fill: #050d1c; stroke: var(--c); stroke-width: 2.5; filter: drop-shadow(0 0 5px var(--c)); transition: stroke-width var(--t-fast) var(--ease), filter var(--t-fast) var(--ease); }
+.map-vehicle .map-vehicle__icon { color: var(--c); }
+.map-vehicle .map-vehicle__cat { fill: var(--c); stroke: #050d1c; stroke-width: 1.4; }
+.map-vehicle__pulse { fill: none; stroke: var(--c); stroke-width: 1.6; opacity: 0.4; animation: nx-ping 3s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.map-vehicle.is-selected .map-vehicle__body, .map-vehicle:focus-visible .map-vehicle__body { stroke: var(--c); stroke-width: 4; filter: drop-shadow(0 0 12px var(--c)) drop-shadow(0 0 4px #fff); }
+.map-vehicle.is-selected .map-vehicle__pulse { opacity: 0.8; animation-duration: 1.6s; }
+.map-vehicle.is-mine .map-vehicle__body { stroke: var(--c); stroke-width: 3.5; }
+.map-vehicle.is-mine .map-vehicle__pulse { animation-duration: 2s; opacity: 0.7; }
+.map-vehicle.is-concept .map-vehicle__body { fill: #050d1c; stroke-dasharray: 3 2; }
+.map-vehicle.is-concept { color: var(--c); }
+.map-vehicle.is-dim { opacity: 0.38; }
+.map-vehicle.is-match .map-vehicle__body { stroke-width: 4; filter: drop-shadow(0 0 14px var(--c)) drop-shadow(0 0 5px var(--c)); }
+.map-vehicle.is-match .map-vehicle__pulse { opacity: 0.9; animation-duration: 1.4s; }
+.map-shadow line { stroke: var(--c); stroke-width: 1.2; stroke-dasharray: 2 3; opacity: 0.35; }
+.map-shadow ellipse { fill: var(--c); opacity: 0.2; }
+/* a problem is shown as a red ring, never by recolouring the vehicle */
+.map-issue { fill: none; stroke: var(--nx-problem); stroke-width: 2.6; filter: drop-shadow(0 0 6px var(--nx-problem-glow)); animation: nx-breathe 1.2s ease-in-out infinite; }
+
+/* ---------- problems (layer 7): red, and only red ---------- */
+.map-incident { cursor: pointer; color: var(--nx-problem); }
+.map-incident__body { fill: #2a0810; stroke: var(--nx-problem); stroke-width: 2.6; filter: drop-shadow(0 0 8px var(--nx-problem-glow)); }
+.map-incident__icon { color: var(--nx-problem-2); }
+.map-incident__ring { fill: none; stroke: var(--nx-problem); stroke-width: 2; opacity: 0; animation: nx-ping 2.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.map-incident.sev-low .map-incident__body { filter: drop-shadow(0 0 3px var(--nx-problem-glow)); stroke-width: 2; }
+.map-incident.sev-critical .map-incident__body { filter: drop-shadow(0 0 16px var(--nx-problem)) drop-shadow(0 0 5px var(--nx-problem-glow)); animation: nx-breathe 1.1s ease-in-out infinite; }
+.map-incident.sev-critical .map-incident__ring { animation-duration: 1.3s; stroke-width: 3; }
+.map-incident__ring--2 { animation-delay: 0.65s; }
+.map-incident.is-selected .map-incident__body, .map-incident:focus-visible .map-incident__body { stroke: #fff; stroke-width: 3.4; }
+.incident-path__halo { fill: none; stroke: var(--nx-problem); stroke-width: 11; opacity: 0.25; stroke-linecap: round; filter: blur(3px); }
+.incident-path__line { fill: none; stroke: var(--nx-problem); stroke-width: 4; stroke-dasharray: 8 7; stroke-linecap: round; filter: drop-shadow(0 0 5px var(--nx-problem-glow)); animation: nx-flow 1.1s linear infinite; }
+.incident-path.sev-low .incident-path__line { stroke-width: 2.6; opacity: 0.8; }
+.incident-path.sev-critical .incident-path__halo { opacity: 0.4; }
+
+/* ---------- overlays: filters, search, network pill, legend ---------- */
+.map-filterbar { position: absolute; z-index: 9; top: 68px; left: 12px; right: 72px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 8px; margin: 0; }
+.map-filterbar::-webkit-scrollbar { display: none; }
+.map-chip-btn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--c, #94a3b8) 55%, transparent); background: rgba(2, 8, 23, 0.84); color: var(--text); font-weight: 800; font-size: 0.78rem; letter-spacing: 0.07em; text-transform: uppercase; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); transition: box-shadow var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
+.map-chip-btn:hover { border-color: var(--c, #fff); }
+.map-chip-btn[aria-pressed='true'] { background: color-mix(in srgb, var(--c, #94a3b8) 22%, rgba(2, 8, 23, 0.92)); border-color: var(--c, #f8fafc); box-shadow: 0 0 14px var(--g, rgba(255, 255, 255, 0.25)); }
+.map-search-btn { position: absolute; z-index: 9; top: 12px; right: 12px; }
+.map-search { position: absolute; z-index: 14; top: 12px; left: 12px; right: 12px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 16px; }
+.map-search svg { color: var(--text-3); }
+.map-search input { flex: 1; min-width: 0; min-height: 44px; background: transparent; border: 0; outline: none; color: var(--text); font-size: 1rem; }
+.map-search__list { flex-basis: 100%; list-style: none; margin: 0 -8px -6px -14px; max-height: 260px; overflow-y: auto; border-top: 1px solid var(--line); }
+.map-search__list button { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; background: none; border: 0; color: var(--text); text-align: left; }
+.map-search__list button:hover, .map-search__list button:focus-visible { background: var(--glass-soft); }
+.map-search__list small { display: block; color: var(--text-3); }
+
+.map-hud { position: absolute; z-index: 8; top: 122px; left: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: calc(100% - 84px); }
+.net-pill { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 14px 4px 12px; border-radius: 14px; background: rgba(6, 20, 38, 0.86); border: 1px solid var(--line-strong); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); --st: var(--ok); }
+.net-pill--warn { --st: var(--warn); }
+.net-pill--bad { --st: var(--nx-problem); }
+.net-pill .dot { background: var(--st); box-shadow: 0 0 10px var(--st); animation: nx-breathe 2.4s ease-in-out infinite; }
+.net-pill b { display: block; font-size: 0.8rem; letter-spacing: 0.1em; }
+.net-pill small { display: block; color: var(--text-2); font-size: 0.78rem; }
+.map-legend-wrap { display: grid; gap: 8px; justify-items: start; }
+.map-legend-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 12px; background: rgba(6, 20, 38, 0.86); border: 1px solid var(--line-strong); color: var(--text-2); font-weight: 700; font-size: 0.85rem; }
+.map-legend { padding: 10px 14px 12px; border-radius: 14px; }
+.map-legend__title { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.16em; color: var(--text-3); margin-bottom: 8px; }
+.map-legend ul { list-style: none; display: grid; gap: 8px; }
+.map-legend li { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 700; text-shadow: 0 0 10px var(--g); }
+
+/* map controls: dark glass, neon border */
+.map-ctl { border-color: rgba(0, 229, 255, 0.45); box-shadow: 0 0 10px rgba(0, 229, 255, 0.15); transition: box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease); }
+.map-ctl:hover { box-shadow: 0 0 16px rgba(0, 229, 255, 0.4); }
+.map-ctl:active { transform: scale(0.94); }
+.map-page .map-controls { top: 68px; }
+
+/* ---------- vehicle and incident panels ---------- */
+.vehicle-panel { top: auto; bottom: 12px; left: 12px; right: 12px; max-width: none; max-height: 66%; z-index: 12; border-color: var(--c); box-shadow: 0 0 24px color-mix(in srgb, var(--c) 35%, transparent), var(--shadow); }
+@media (min-width: 900px) { .vehicle-panel { right: auto; width: 360px; max-height: calc(100% - 140px); } }
+.vp-icon { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; border-radius: 14px; background: #050d1c; border: 2px solid var(--cat, var(--c)); color: var(--cat, var(--c)); box-shadow: 0 0 12px var(--g, transparent); }
+.vp-cat { color: var(--cat, var(--c)); font-weight: 800; font-size: 0.72rem; letter-spacing: 0.12em; }
+.vp-status { display: inline-flex; align-items: center; gap: 8px; margin: 8px 0; font-weight: 800; font-size: 0.8rem; letter-spacing: 0.1em; color: var(--ok); }
+.vp-status .dot { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.vp-status.is-late { color: var(--nx-problem-2); }
+.vp-status.is-late .dot { background: var(--nx-problem); box-shadow: 0 0 8px var(--nx-problem); }
+.vp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.vp-grid > div { min-width: 0; padding: 8px 10px; border-radius: 12px; background: var(--glass-soft); border: 1px solid var(--line); }
+.vp-grid dt { font-size: 0.72rem; color: var(--text-3); }
+.vp-grid dd { font-weight: 700; overflow-wrap: anywhere; }
+.vehicle-panel .btn { width: 100%; }
+.incident-panel { --c: var(--nx-problem); --cat: var(--nx-problem); --g: var(--nx-problem-glow); }
+.incident-panel__advice { display: flex; gap: 8px; margin: 4px 0 12px; color: var(--text-2); }
+.incident-panel__advice svg { color: var(--violet-ink); flex-shrink: 0; margin-top: 3px; }
+
+/* ---------- live journey panel: accent follows the category, red on a problem ---------- */
+.sheet { border-top-color: var(--accent, var(--line-strong)); box-shadow: 0 -10px 30px rgba(0, 4, 16, 0.5), 0 -2px 22px var(--accent-glow, transparent); }
+@media (min-width: 900px) { .sheet { border-left-color: var(--accent, var(--line)); box-shadow: -8px 0 30px -12px var(--accent-glow, transparent); } }
+.sheet .nx-eyebrow { color: var(--accent, var(--cyan-ink)); }
+.sheet .progress__bar { background: var(--accent, var(--cyan)); box-shadow: 0 0 10px var(--accent-glow, transparent); }
+.sheet .btn--primary { --b-bg: var(--accent, var(--cyan)); --b-bd: var(--accent, var(--cyan)); --b-fg: var(--accent-ink, var(--on-accent)); box-shadow: 0 0 16px var(--accent-glow, transparent); }
+.live-cat { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; color: var(--c); }
+.leg-steps { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.leg-steps li { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); font-size: 0.78rem; font-weight: 700; color: var(--text-2); }
+.leg-steps li.is-current { border-color: var(--c); color: var(--text); box-shadow: 0 0 12px var(--g); }
+.leg-steps li.is-done { opacity: 0.5; }
+.leg-steps li.is-next { opacity: 0.8; }
+.leg-steps li.is-next .dot { background: transparent; border: 2px solid var(--c); box-shadow: none; }
+.leg-steps .dot { width: 8px; height: 8px; }
+.live-now__media { border-color: var(--c); }
+
+/* ---------- motion: reduced means still ---------- */
+html[data-motion='reduce'] .map-page *, html[data-motion='reduce'] .map-page *::before { animation: none !important; transition: none !important; }
+html[data-motion='reduce'] .map-page .net-route__flow, html[data-motion='reduce'] .map-page .map-route__flow { stroke-dasharray: 1 18; }
+@media (prefers-reduced-motion: reduce) {
+  .map-page *, .map-page *::before { animation: none !important; transition: none !important; }
+}
+html[data-contrast='high'] .map-page .net-route__halo, html[data-contrast='high'] .map-page .map-route__halo { display: none; }
+html[data-contrast='high'] .map-page .map-vehicle__body { stroke-width: 3.5; }
+@media (max-width: 899px) { .map-page.has-panel .sheet { display: none; } }
+.vp-grid dd { text-align: left; }
+.live-card, .live-more, .live-idle { grid-template-columns: minmax(0, 1fr); }
+.live-card > *, .live-more > * { min-width: 0; }
+
+/* ==========================================================
+   Mobile "Follow my journey": the map is the canvas, the sheet is the decision layer.
+   Everything hidden here is still reachable (Layers, sheet expansion). Desktop is untouched.
+   ========================================================== */
+.net-pill__short { display: none; }
+.map-layers__chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.map-layers__chips .map-chip-btn { min-height: 40px; padding: 0 12px; font-size: 0.72rem; }
+.map-layers .map-legend-wrap { margin: 4px 0 8px; }
+.sheet__handle { flex-direction: column; align-items: center; }
+.sheet__handle-label { margin-top: 2px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.sheet__tags, .sheet__conf { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 0.85rem; color: var(--text-2); min-width: 0; }
+.sheet__tags svg, .sheet__conf svg { flex-shrink: 0; color: var(--ok); }
+.live-idle__route { display: grid; gap: 2px; }
+.live-idle__route strong { font-size: 1.1rem; overflow-wrap: anywhere; }
+.live-idle__route span { color: var(--text-2); }
+
+@media (max-width: 899px) {
+  .map-page.is-mobile { height: calc(100dvh - var(--header-h) - env(safe-area-inset-top) - var(--nav-h) - env(safe-area-inset-bottom)); min-height: 280px; max-width: 100vw; }
+
+  /* the network filter row, legend and big network status are secondary on a phone */
+  .map-page.is-mobile .map-filterbar { display: none; }
+  .map-page.is-mobile .map-hud { top: 10px; left: 10px; max-width: calc(100% - 68px); }
+  .map-page.is-mobile .map-hud .map-legend-wrap { display: none; }
+  .map-page.is-mobile .net-pill { min-height: 32px; padding: 2px 12px 2px 10px; gap: 8px; border-radius: 999px; background: rgba(6, 20, 38, 0.6); border-color: transparent; }
+  .map-page.is-mobile .net-pill__full { display: none; }
+  .map-page.is-mobile .net-pill__short { display: inline; font-size: 0.8rem; font-weight: 700; color: var(--text-2); }
+  .map-page.is-mobile .net-pill .dot { width: 8px; height: 8px; animation: none; }
+
+  /* compact controls: search, zoom, follow, layers */
+  .map-page.is-mobile .map-search-btn { top: 10px; right: 10px; width: 44px; height: 44px; }
+  .map-page.is-mobile .map-controls { top: 60px; right: 10px; gap: 6px; }
+  .map-page.is-mobile .map-controls--compact .map-ctl { width: 44px; height: 44px; border-radius: 12px; }
+  .map-page.is-mobile .map-search { top: 10px; left: 10px; right: 10px; }
+  .map-page.is-mobile .map-layers { z-index: 11; background: rgba(6, 20, 38, 0.98); top: 10px; left: 10px; right: 64px; max-width: none; max-height: calc(100% - 20px); }
+  .map-page.is-mobile .map-banner { top: 56px; left: 10px; right: 64px; }
+
+  /* compact journey sheet: leaves 55%+ of the map visible until the traveller asks for more */
+  .map-page.is-mobile .sheet { padding: 0 14px 12px; max-height: 50%; }
+  .map-page.is-mobile .sheet:not(.is-open) { max-height: none; overflow: hidden; }
+  .map-page.is-mobile .sheet.is-open { max-height: 66%; overflow-y: auto; }
+  .map-page.is-mobile .sheet.is-full { max-height: 86%; }
+  .map-page.is-mobile .sheet__handle { min-height: 34px; }
+  .map-page.is-mobile .sheet__handle span[aria-hidden] { margin-top: 6px; }
+  .map-page.is-mobile .live-card, .map-page.is-mobile .live-idle { gap: 8px; }
+  .map-page.is-mobile .live-idle h2 { font-size: 1.2rem; }
+  .map-page.is-mobile .live-now { grid-template-columns: 68px minmax(0, 1fr); gap: 12px; }
+  .map-page.is-mobile .live-now__media { border-radius: 12px; }
+  .map-page.is-mobile .live-now h2 { font-size: 1.05rem; }
+  .map-page.is-mobile .live-now p { font-size: 0.9rem; }
+  .map-page.is-mobile .sheet:not(.is-open) .live-now p { display: none; }
+  .map-page.is-mobile .live-cat { margin-bottom: 0; }
+  .map-page.is-mobile .live-eta { gap: 8px; }
+  .map-page.is-mobile .live-eta b { font-size: 1.45rem; }
+  .map-page.is-mobile .live-eta span { font-size: 0.9rem; min-width: 0; overflow-wrap: anywhere; }
+  /* the next action is the focus */
+  .map-page.is-mobile .live-next { padding: 10px 12px; border-color: var(--accent, var(--line-strong)); border-left-width: 4px; background: color-mix(in srgb, var(--accent, #00e5ff) 12%, transparent); }
+  .map-page.is-mobile .live-next strong { font-size: 1.15rem; overflow-wrap: anywhere; }
+  .map-page.is-mobile .sheet:not(.is-open) .sheet__tags span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .map-page.is-mobile .live-idle .btn--ghost { min-height: 44px; }
+}
+
+/* short phones (iPhone SE, landscape-ish browsers): keep the primary button in view */
+@media (max-width: 899px) and (max-height: 700px) {
+  .map-page.is-mobile .sheet:not(.is-open) .live-idle h2 { display: none; }
+  .map-page.is-mobile .sheet:not(.is-open) .sheet__handle-label { display: none; }
+  .map-page.is-mobile .sheet:not(.is-open) .sheet__handle { min-height: 22px; }
+  .map-page.is-mobile .sheet:not(.is-open) .live-now__media { display: none; }
+  .map-page.is-mobile .sheet:not(.is-open) .live-now { grid-template-columns: minmax(0, 1fr); }
+  .map-page.is-mobile .sheet:not(.is-open) .live-idle .btn--ghost { min-height: 40px; }
+}
+
+/* Peek: phone sheet collapsed to a single summary line so the map owns the screen.
+   Swipe up or tap the handle to bring the details back. */
+@media (max-width: 899px) {
+  .sheet__handle { touch-action: none; }
+  .map-page.is-mobile .sheet.is-peek { padding-bottom: 10px; }
+  .map-page.is-mobile .sheet.is-peek .sheet__handle { min-height: 26px; }
+  .map-page.is-mobile .sheet.is-peek .sheet__handle-label { display: none; }
+  .map-page.is-mobile .sheet.is-peek .live-idle > :not(h2):not(.nx-eyebrow):not(.live-idle__route),
+  .map-page.is-mobile .sheet.is-peek .live-idle .btn--ghost, .map-page.is-mobile .sheet.is-peek .live-idle .btn--secondary { display: none; }
+  .map-page.is-mobile .sheet.is-peek .live-idle h2 { display: block; font-size: 1.05rem; }
+  .map-page.is-mobile .sheet.is-peek .live-card > :not(.live-eta):not(.rebook-alert):not(.live-actions) { display: none; }
+  .map-page.is-mobile .sheet.is-peek .live-actions .btn { min-height: 44px; }
+  .map-page.is-mobile .sheet.is-peek .live-eta { margin: 0; }
+}

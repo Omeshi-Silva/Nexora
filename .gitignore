@@ -1,0 +1,8 @@
+node_modules
+dist
+.DS_Store
+
+# Original vehicle photos (large). Only the optimised WebP files in src/assets are shipped.
+vehicle-images/*.jpg
+vehicle-images/*.jpeg
+vehicle-images/*.png

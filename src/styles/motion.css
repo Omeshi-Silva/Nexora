@@ -1,0 +1,80 @@
+/* ==========================================================
+   Motion layer: page morphing (View Transitions) and the 3D hero.
+   Every effect is switched off by Reduced motion.
+   ========================================================== */
+
+/* ---------- page morphing ---------- */
+.vt .page-transition { animation: none; }
+.header { view-transition-name: nx-header; }
+.bottom-nav { view-transition-name: nx-nav; }
+.hero__search .search-card, .journey-head { view-transition-name: nx-journey; }
+.journey .journey-summary { view-transition-name: nx-summary; }
+.journey .tabs-wrap { view-transition-name: nx-tabs; }
+.selected-card { view-transition-name: nx-route; }
+.sheet { view-transition-name: nx-sheet; }
+
+::view-transition-old(root) { animation: 200ms var(--ease) both nx-out; }
+::view-transition-new(root) { animation: 320ms var(--ease) 60ms both nx-in; }
+::view-transition-group(nx-journey), ::view-transition-group(nx-route) { animation-duration: 460ms; animation-timing-function: cubic-bezier(0.2, 0.75, 0.15, 1); }
+::view-transition-old(nx-journey), ::view-transition-new(nx-journey), ::view-transition-old(nx-route), ::view-transition-new(nx-route) { height: 100%; object-fit: cover; }
+::view-transition-group(nx-sheet) { animation-duration: 380ms; }
+@keyframes nx-out { to { opacity: 0; transform: translateY(-6px); } }
+@keyframes nx-in { from { opacity: 0; transform: translateY(10px); } }
+html[data-motion='reduce'] ::view-transition-group(*), html[data-motion='reduce'] ::view-transition-old(*), html[data-motion='reduce'] ::view-transition-new(*) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
+
+/* ---------- 3D hero city ---------- */
+.hero { position: relative; isolation: isolate; }
+.hero > :not(.hero-scene) { position: relative; z-index: 1; }
+.hero-scene {
+  --p: 0;
+  position: absolute; z-index: 0; top: -16px; left: -16px; right: -16px; height: 620px;
+  overflow: hidden; pointer-events: none; perspective: 900px; perspective-origin: 50% 20%;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 100%);
+}
+.hero-scene::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 70% at 20% 22%, rgba(2, 8, 23, 0.72), rgba(2, 8, 23, 0.1) 60%), linear-gradient(180deg, rgba(2, 8, 23, 0) 40%, rgba(2, 8, 23, 0.85) 82%, var(--bg) 100%); }
+.hero-scene__plane {
+  position: absolute; left: -35%; right: -35%; top: -52%; height: 125%;
+  transform-style: preserve-3d; will-change: transform;
+  transform: translate3d(0, calc(var(--p) * 90px), 0) rotateX(calc(56deg - var(--p) * 26deg)) rotateZ(calc(-16deg + var(--p) * 14deg)) scale(calc(1.15 - var(--p) * 0.1));
+  transition: transform 80ms linear;
+}
+.hero-scene__layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hero-scene__route { transform: translateZ(10px); }
+.hero-scene__buildings { transform: translateZ(calc(18px + var(--p) * 10px)); }
+.hs-road { stroke: rgba(0, 229, 255, 0.3); stroke-width: 2.5; }
+.hs-rail { fill: none; stroke: var(--nx-rail); stroke-width: 5; }
+.hs-bld { fill: rgba(56, 110, 180, 0.22); stroke: rgba(120, 175, 255, 0.45); stroke-width: 1.2; }
+.hs-bld--lit { fill: rgba(0, 229, 255, 0.22); stroke: rgba(0, 229, 255, 0.75); }
+.hs-halo { fill: none; stroke: rgba(168, 85, 247, 0.5); stroke-width: 20; stroke-linecap: round; stroke-linejoin: round; filter: blur(5px); }
+.hs-line { fill: none; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.7)); }
+.hs-dot { fill: #f8fafc; stroke: var(--cyan); stroke-width: 5; }
+.hs-pulse { fill: none; stroke: var(--cyan); stroke-width: 2; opacity: 0.6; transform-box: fill-box; transform-origin: center; animation: ring 2.2s ease-out infinite; }
+.hs-hub { fill: #061426; stroke: #93c5fd; stroke-width: 2; }
+.hs-label { fill: rgba(203, 213, 225, 0.5); font: 700 18px var(--font-ui); }
+@media (min-width: 1000px) {
+  .hero-scene { left: -28px; right: 45%; height: 680px; -webkit-mask-image: linear-gradient(90deg, #000 60%, transparent), linear-gradient(180deg, #000 60%, transparent); mask-image: linear-gradient(180deg, #000 60%, transparent); }
+  .hero-scene::after { background: linear-gradient(90deg, rgba(2, 8, 23, 0.55), rgba(2, 8, 23, 0.25) 60%, var(--bg)); }
+}
+html[data-contrast='high'] .hero-scene { display: none; }
+html[data-simple='true'] .hero-scene { opacity: 0.5; }
+
+/* ---------- personas ---------- */
+.persona-grid { list-style: none; display: grid; grid-template-columns: 1fr; gap: 8px; }
+@media (min-width: 640px) { .persona-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .persona-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.persona-card { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--glass); color: var(--text); text-align: left; transition: border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); }
+.persona-card:hover { border-color: var(--violet); }
+.persona-card:active { transform: scale(0.99); }
+.persona-card.is-on { border-color: var(--violet); background: var(--violet-soft); box-shadow: var(--glow-violet); }
+.persona-card__text { display: flex; flex-direction: column; min-width: 0; }
+.persona-card__text small { color: var(--text-3); font-size: 0.85rem; }
+.persona-banner { position: sticky; top: calc(var(--header-h) + env(safe-area-inset-top)); z-index: 45; background: rgba(40, 18, 70, 0.92); border-bottom: 1px solid rgba(168, 85, 247, 0.55); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+.persona-banner__inner { display: flex; align-items: center; gap: 10px; padding-top: 8px; padding-bottom: 8px; flex-wrap: wrap; }
+.persona-banner svg { color: var(--violet-ink); flex-shrink: 0; }
+html[data-contrast='high'] .persona-banner { background: #000; border-color: #fff; }
+
+@media (prefers-reduced-motion: reduce) { .hero-scene__plane { transition: none; } .hs-pulse { animation: none; } }
+html[data-motion='reduce'] .hero-scene__plane { transition: none; }
+html[data-motion='reduce'] .hs-pulse { animation: none; }

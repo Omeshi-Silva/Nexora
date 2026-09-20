@@ -1,0 +1,139 @@
+/* ==========================================================
+   NEXORA Live Map: cinematic night-city scene.
+   Only the map drawing lives here: buildings, water, bridges, hub structures,
+   miniature vehicles and the glow on the routes. Panels, controls and layout are untouched.
+   Category colours still come from --c (set per route / vehicle from data/vehicles.js).
+   ========================================================== */
+
+.map-stage { background: #030812; }
+/* cinematic falloff: dark edges and a hazy distance at the top of the map */
+.map-stage:has(.map-svg)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(3, 8, 22, 0.55), rgba(3, 8, 22, 0) 24%),
+    radial-gradient(ellipse at 50% 58%, rgba(3, 8, 22, 0) 52%, rgba(2, 5, 14, 0.6) 100%);
+}
+
+/* ---------- streets ---------- */
+.scene-roads .map-road { stroke: #13254f; stroke-width: 13; }
+.scene-roads .map-road-core { stroke: rgba(150, 195, 255, 0.16); stroke-width: 1; stroke-dasharray: 5 9; }
+html[data-contrast='high'] .scene-roads .map-road-core { stroke: rgba(255, 255, 255, 0.5); }
+
+/* ---------- city blocks: extruded towers ---------- */
+.bld__front { fill: url(#sc-front); }
+.bld__side { fill: url(#sc-side); }
+.bld__top { fill: #1e3266; stroke: rgba(150, 205, 255, 0.4); stroke-width: 0.6; stroke-linejoin: round; }
+.bld--t1 .bld__front { fill: url(#sc-front1); }
+.bld--t1 .bld__top { fill: #1b4257; }
+.bld--t2 .bld__front { fill: url(#sc-front2); }
+.bld--t2 .bld__top { fill: #362b6e; }
+.bld__win--c { fill: url(#sc-win-c); opacity: 0.55; }
+.bld__win--m { fill: url(#sc-win-m); opacity: 0.55; }
+.bld__win--side { fill: url(#sc-win-s); opacity: 0.7; }
+.bld__crown { stroke-width: 0.9; stroke-linejoin: round; }
+.bld__crown--c { fill: rgba(0, 229, 255, 0.16); stroke: rgba(120, 240, 255, 0.85); }
+.bld__crown--m { fill: rgba(214, 107, 255, 0.16); stroke: rgba(230, 160, 255, 0.85); }
+.bld__rim { stroke-width: 1.1; opacity: 0.9; }
+.bld__rim--c { stroke: #4fe3ff; }
+.bld__rim--m { stroke: #d66bff; }
+
+/* ---------- parks ---------- */
+.scene-park { fill: rgba(20, 90, 60, 0.2); stroke: rgba(61, 220, 151, 0.24); }
+.scene-tree { fill: #0f4a36; }
+.scene-tree__hi { fill: #3fbf88; opacity: 0.45; }
+.scene-tree__shadow { fill: rgba(0, 0, 0, 0.4); }
+
+/* ---------- water, bridges and the rail viaduct ---------- */
+.scene-water__body { fill: url(#sc-water); }
+.scene-water__edge { fill: none; stroke: rgba(0, 229, 255, 0.42); stroke-width: 1.4; }
+.scene-water__shimmer line { stroke: rgba(130, 225, 255, 0.16); stroke-width: 1.2; stroke-linecap: round; animation: nx-flow 12s linear infinite; }
+.bridge__deck { stroke: #182a55; stroke-width: 15; }
+.bridge__rail { stroke: rgba(0, 229, 255, 0.6); stroke-width: 1.2; }
+.bridge__lane { stroke: rgba(255, 255, 255, 0.28); stroke-width: 1; stroke-dasharray: 5 7; }
+.scene-bridges line[y1='130'][y2='130'] { stroke-linecap: butt; }
+.map-rail-shadow { fill: none; stroke: rgba(0, 0, 0, 0.55); stroke-width: 7; stroke-linejoin: round; }
+.map-rail { fill: none; stroke: var(--nx-rail); stroke-width: 4.4; opacity: 0.85; stroke-linejoin: round; filter: drop-shadow(0 0 5px var(--nx-rail-glow)); }
+
+/* ---------- mobility hub structures ---------- */
+.hub-glow--cyan { fill: url(#sc-glow-cyan); }
+.hub-glow--air { fill: url(#sc-glow-air); }
+.hub-glow--smart { fill: url(#sc-glow-smart); }
+.hub-plaza { fill: #08142e; stroke: rgba(0, 229, 255, 0.5); stroke-width: 1.5; }
+.hub-plaza--air { fill: #071a30; stroke: rgba(0, 175, 255, 0.65); }
+.hub-plaza--rail { fill: #120a30; stroke: rgba(176, 38, 255, 0.65); }
+.hub-plaza--smart { fill: #17150a; stroke: rgba(255, 230, 0, 0.55); }
+.hub-shore { fill: rgba(0, 229, 255, 0.1); stroke: rgba(0, 229, 255, 0.4); stroke-width: 1.2; }
+.hub-ring { fill: none; stroke: #2fe0ff; stroke-width: 1.6; opacity: 0.75; }
+.hub-ring--air { stroke: #00afff; }
+.hub-ring--smart { stroke: #ffe600; }
+.hub-ring--dash { stroke-dasharray: 3 7; opacity: 0.6; }
+.hub-wall { fill: #0b2044; stroke: rgba(0, 229, 255, 0.5); stroke-width: 1; }
+.hub-wall--rail { fill: #1a1040; stroke: rgba(176, 38, 255, 0.6); }
+.hub-roof { fill: #123a72; stroke: rgba(0, 229, 255, 0.75); stroke-width: 1.2; }
+.hub-dome { fill: url(#sc-dome); }
+.hub-dome__hi { fill: rgba(255, 255, 255, 0.42); }
+.hub-dome__rim { fill: none; stroke: rgba(190, 250, 255, 0.85); stroke-width: 1; }
+.hub-pad { fill: #0a2a4a; stroke: #00afff; stroke-width: 1.5; }
+.hub-pad--core { fill: #0d3d6b; }
+.hub-pad__h { stroke: #bfe9ff; stroke-width: 2; fill: none; stroke-linecap: round; }
+.hub-lamp { fill: #7fe8ff; opacity: 0.9; }
+.hub-canopy { fill: rgba(176, 38, 255, 0.24); stroke: rgba(216, 107, 255, 0.75); stroke-width: 1; }
+.hub-canopy__ridge { stroke: rgba(255, 255, 255, 0.4); stroke-width: 1; }
+
+/* ---------- labels ---------- */
+.scene-labels { pointer-events: none; }
+.scene-pill rect, .scene-pill__bg { fill: rgba(4, 12, 28, 0.82); stroke: rgba(120, 180, 255, 0.32); stroke-width: 1; }
+.scene-pill__title { fill: #fff; font: 700 11.5px var(--font-ui); }
+.scene-pill__sub { fill: rgba(170, 200, 235, 0.8); font: 600 9.5px var(--font-ui); }
+.scene-pill__icon rect { fill: #8fe0ff; stroke: none; }
+.scene-here__ring { fill: rgba(0, 229, 255, 0.14); stroke: #00e5ff; stroke-width: 1.6; }
+.scene-here__ring--outer { fill: none; animation: nx-ping 2.8s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.scene-here__pin { fill: #0b8bff; stroke: #bff4ff; stroke-width: 1.4; filter: drop-shadow(0 0 6px #00d0ff); }
+.scene-here__dot { fill: #fff; }
+.scene-pill rect.scene-here__label, .scene-here__label { stroke: rgba(0, 229, 255, 0.5); }
+.scene-here__title { fill: #4fe3ff; font-size: 12.5px; }
+
+/* ---------- hub badges ---------- */
+.map-station .map-station__box { fill: rgba(4, 12, 28, 0.94); stroke: var(--c); stroke-width: 2; filter: drop-shadow(0 0 6px var(--c)); }
+.map-station__pill { fill: rgba(4, 12, 28, 0.84); stroke: color-mix(in srgb, var(--c) 45%, transparent); stroke-width: 1; }
+.map-station__name { fill: #fff; font: 800 11.5px var(--font-ui); pointer-events: none; }
+.map-station__sub { fill: rgba(170, 200, 235, 0.85); font: 600 9.5px var(--font-ui); pointer-events: none; }
+
+/* ---------- glowing routes: brighter, thicker neon bands ---------- */
+.net-route__halo { stroke-width: 9; opacity: 0.2; filter: blur(2px); }
+.net-route__line { stroke-width: 2.4; opacity: 0.95; filter: drop-shadow(0 0 4px var(--c)); }
+.net-route__flow { stroke: color-mix(in srgb, var(--c) 30%, #fff); stroke-width: 2; stroke-dasharray: 1 18; opacity: 0.85; }
+.net-route--rail .net-route__line { stroke-width: 3.6; }
+.net-route--air .net-route__halo { opacity: 0.16; }
+.net-route--air .net-route__line { stroke-width: 2.2; opacity: 0.9; }
+
+/* ---------- miniature vehicles ---------- */
+.map-vehicle__model { filter: drop-shadow(0 1.4px 1.2px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 2.6px color-mix(in srgb, var(--c) 85%, transparent)); }
+.map-vehicle.cat-air .map-vehicle__model { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--c) 90%, transparent)); }
+.mv-body { fill: color-mix(in srgb, var(--c) 22%, #dde8f8); stroke: rgba(0, 0, 0, 0.5); stroke-width: 0.5; }
+.mv-body--capsule { fill: #eef8ff; }
+.mv-glass { fill: #0a1830; opacity: 0.94; }
+.mv-glass--dome { fill: #10305a; }
+.mv-sheen { fill: url(#mv-sheen); stroke: none; pointer-events: none; }
+.mv-accent { fill: var(--c); }
+.mv-lamp { fill: #fff; }
+.mv-chrome { fill: #fff; opacity: 0.55; }
+.mv-beam { fill: rgba(255, 248, 215, 0.12); }
+.mv-wing { fill: color-mix(in srgb, var(--c) 18%, #c5d3ea); stroke: rgba(0, 0, 0, 0.45); stroke-width: 0.4; }
+.mv-arm { stroke: #a5b8d8; stroke-width: 0.9; stroke-linecap: round; }
+.mv-rotor { fill: color-mix(in srgb, var(--c) 22%, transparent); stroke: var(--c); stroke-width: 0.5; opacity: 0.8; }
+.mv-blade { stroke: rgba(255, 255, 255, 0.7); stroke-width: 0.5; transform-box: fill-box; transform-origin: center; animation: mv-spin 0.28s linear infinite; }
+.mv-hub { fill: #e4edfb; }
+.mv-thrust { fill: var(--c); opacity: 0.85; }
+@keyframes mv-spin { to { transform: rotate(180deg); } }
+.map-vehicle.is-concept .mv-body { stroke: var(--c); stroke-dasharray: 1.6 1; stroke-width: 0.7; }
+.map-vehicle__ring { fill: none; stroke: var(--c); stroke-width: 1.2; stroke-dasharray: 3 3; opacity: 0.95; filter: drop-shadow(0 0 3px var(--c)); }
+.map-vehicle.is-selected .map-vehicle__model, .map-vehicle:focus-visible .map-vehicle__model, .map-vehicle.is-match .map-vehicle__model { filter: drop-shadow(0 0 5px var(--c)) drop-shadow(0 0 2px #fff); }
+.map-vehicle.is-mine .map-vehicle__ring { stroke-width: 1.8; stroke-dasharray: none; }
+.map-vehicle:focus-visible .map-vehicle__ring { stroke: #fff; }
+.map-vehicle.is-dim { opacity: 0.32; }
+html[data-contrast='high'] .map-vehicle__model { filter: drop-shadow(0 0 1px #fff); }
